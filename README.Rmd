@@ -1,0 +1,107 @@
+---
+output: 
+  github_document:
+    html_preview: false
+---
+
+```{r, echo = FALSE, message = FALSE}
+knitr::opts_chunk$set(
+  fig.align = 'center',
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-")
+options(tibble.print_min = 5L, tibble.print_max = 5L)
+```
+
+# xapir<img src="man/figures/xapir.png" width="120px" align="right" />
+
+<!-- badges: start -->
+[![Lifecycle: Experimental](https://lifecycle.r-lib.org/articles/figures/lifecycle-experimental.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
+
+{xapir} is an R package that connects to a limited set of X API v2 endpoints using 
+tidy principles.  
+
+Package features include: 
+
+  * OAuth 2.0 authentication by setting your API token as environment variable (Bearer Token)
+  * Retrieve timeline data using `x_get_timeline()`
+  * Retrieve tweet data using `x_get_tweets()`
+  
+## Table of Contents  
+  * [Installation](#installation)
+  * [Vignettes](#vignettes)
+  * [Usage](#usage)
+    * [Authenticate](#authenticate)
+    * [Get Timeline](#get-timeline)
+    * [Get Tweets](#get-tweets)
+  * [Future](#future)
+  * [More Information](#more-information)
+
+## Installation
+
+```{r, eval = FALSE}
+# get the development version on GitHub
+# install.packages("remotes")
+remotes::install_github("Ivey-Business-School/xapir")
+
+# this package is NOT on CRAN so you cannot install using `install.packages()`
+```
+
+If you encounter an issue while using this package, please file a minimal reproducible 
+example on [GitHub](https://github.com/Ivey-Business-School/xapir/issues).
+
+## Vignettes
+
+The README below outlines the basic package functionality. For more information 
+please feel free to browse the {xapir} website at https://Ivey-Business-School.github.io/xapir/ which contains the following vignettes:
+
+  * [Getting Started](https://Ivey-Business-School.github.io/xapir/articles/getting-started.html)
+
+## Usage
+
+### Authenticate
+
+First, load the {xapir} package and supply your token.
+
+```{r auth, eval = FALSE}
+suppressWarnings(suppressMessages(library(dplyr)))
+library(xapir)
+token <- Sys.getenv("MY_TOKEN")
+```
+
+After supplying your token, you can begin running functions that call the X APIs.
+
+### Get Timeline
+
+TBA
+
+```{r get-timeline}
+# example code here
+```
+
+### Get Tweets
+
+TBA
+
+```{r get-tweets}
+# example code here
+```
+
+## Future
+
+This package only contains functions that use a subset of the X API endpoints.
+Future iterations may expand upon this to include more.
+
+## More Information
+
+X provides examples in many programming languages, including R by using the 
+package {RTwitterV2}. Please use the X API documentation for more detail around
+what is expected for each endpoint and the type of data the API call will return. 
+X's documentation is available here: https://developer.x.com/en/docs/x-api.
+
+---
+Please note that this project is released with a [Contributor Code of Conduct](https://github.com/Ivey-Business-School.github.io/xapir/blob/master/.github/CODE_OF_CONDUCT.md). 
+By participating in this project you agree to abide by its terms.  
+
+[Top](#xapir)

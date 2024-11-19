@@ -1,0 +1,33 @@
+---
+title: "Getting Started"
+author: "Jeffrey Boichuk"
+date: "2024-11-19"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 4
+    keep_md: true
+vignette: >
+  %\VignetteIndexEntry{Getting Started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = FALSE}
+NOT_CRAN <- identical(tolower(Sys.getenv("NOT_CRAN")), "true")
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  purl = NOT_CRAN,
+  eval = NOT_CRAN
+)
+options(tibble.print_min = 5L, tibble.print_max = 5L)
+```
+
+## Authentication
+
+First, load the {xapir} package and login. 
+
+```{r load-package, eval=FALSE}
+library(xapir)
+```

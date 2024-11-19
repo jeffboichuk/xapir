@@ -1,9 +1,26 @@
-get_user_posts <- function(
+#' Get User Timeline
+#'
+#' @description
+#' Ping the timeline endpoint. Add more details here.
+#'
+#' @importFrom httr2 request req_auth_bearer_token req_url_path_append req_perform resp_body_json
+#' @importFrom purrr pluck
+#' @template username
+#' @template max_results
+#' @template pagination_token
+#' @template pagination_token
+#' @return \code{list} that contains 4 elements that make up the API response
+#' @examples
+#' \dontrun{
+#' tl <- x_get_timeline("Tesla")
+#' }
+#' @export
+x_get_timeline <- function(
     username,
     max_results      = 10,
     pagination_token = NULL,
     token            = Sys.getenv("X_BEARER_TOKEN"),
-    tweet_fields =
+    post_fields =
       c("created_at", "text", "public_metrics", "geo", "attachments",
         "context_annotations", "entities", "lang", "referenced_tweets",
         "reply_settings", "conversation_id", "in_reply_to_user_id", "author_id",
@@ -30,7 +47,7 @@ get_user_posts <- function(
     user_id
 
   # Join the fields with commas as the API expects
-  tweet_fields_str <- str_c(tweet_fields, collapse = ",")
+  post_fields_str <- str_c(post_fields, collapse = ",")
   user_fields_str  <- str_c(user_fields, collapse = ",")
   media_fields_str <- str_c(media_fields, collapse = ",")
   poll_fields_str  <- str_c(poll_fields, collapse = ",")
@@ -50,6 +67,10 @@ get_user_posts <- function(
     ) |>
     req_auth_bearer_token(token = Sys.getenv("X_BEARER_TOKEN")) |>
     req_perform()
+
+  # Check if the pagination token is not null
+  # if not null, then capture and bind together.
+  # results2 <- x_get_timeline(pagination_token = XXXXX)
 
   # Return the response
   return(response)

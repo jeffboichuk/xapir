@@ -1,0 +1,38 @@
+title: xapir
+url: https://Ivey-Business-School.github.io/xapir/
+template:
+  bootstrap: 5
+  opengraph:
+    image:
+      src: man/figures/xapir.png
+      alt: "xapir package logo"
+  params:
+    bootswatch: spacelab
+
+home:
+  strip_header: true
+
+navbar:
+  type: default
+  left:
+    - text: "Articles"
+      icon: fas fa-book
+      menu:
+      -  text: Getting Started
+         href: articles/getting-started.html
+    - text: Reference
+      icon: fa-file-code-o
+      href: reference/index.html
+    - text: News
+      icon: fa-newspaper-o
+      href: news/index.html
+  right:
+    - text: GitHub
+      icon: fa-github fa-lg
+      href: https://github.com/Ivey-Business-School/xapir
+
+reference:
+  - title: Timeline Functions
+    desc: Functions to query timlines
+    contents:
+      - '`x_get_timeline`'
