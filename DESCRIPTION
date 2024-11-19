@@ -23,7 +23,8 @@ Imports:
     utils (>= 3.6.0),
     stats (>= 3.6.0),
     purrr (>= 0.2.5),
-    httr2 (>= 1.0.0)
+    httr2 (>= 1.0.0),
+    stringr
 Suggests:
     knitr,
     rmarkdown,

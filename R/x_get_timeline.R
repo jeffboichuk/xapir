@@ -3,8 +3,9 @@
 #' @description
 #' Ping the timeline endpoint. Add more details here.
 #'
-#' @importFrom httr2 request req_auth_bearer_token req_url_path_append req_perform resp_body_json
+#' @importFrom httr2 request req_auth_bearer_token req_url_path_append req_perform resp_body_json req_url_query
 #' @importFrom purrr pluck
+#' @importFrom stringr str_c
 #' @template username
 #' @template max_results
 #' @template pagination_token
@@ -35,7 +36,8 @@ x_get_timeline <- function(
       c("end_datetime", "duration_minutes", "options", "voting_status", "id"),
     expansions = c("author_id", "entities.mentions.username",
                    "referenced_tweets.id.author_id", "referenced_tweets.id",
-                   "in_reply_to_user_id", "attachments.media_keys", "attachments.poll_ids")
+                   "in_reply_to_user_id", "attachments.media_keys",
+                   "attachments.poll_ids")
 ) {
 
   request(base_url = "https://api.x.com/2") |>
@@ -57,7 +59,7 @@ x_get_timeline <- function(
   response <- request(base_url = "https://api.x.com/2") |>
     req_url_path_append(endpoint = paste0("users/", user_id, "/tweets")) |>
     req_url_query(
-      tweet.fields     = tweet_fields_str,
+      tweet.fields     = post_fields_str,
       user.fields      = user_fields_str,
       media.fields     = media_fields_str,
       poll.fields      = poll_fields_str,
