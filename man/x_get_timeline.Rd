@@ -35,7 +35,7 @@ x_get_timeline(
 \item{username}{\code{character}; the name of the account on X without the
 "@" symbol.}
 
-\item{max_results}{\code{numeric}; a number between 1 and 100 indicating the
+\item{max_results}{\code{numeric}; a number between 5 and 100 indicating the
 number of posts returned per API call.}
 
 \item{end_time}{The latest date-time from which you want to get posts.
