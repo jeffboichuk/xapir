@@ -7,8 +7,14 @@
 x_get_timeline(
   username,
   max_results = 10,
+  end_time = NULL,
+  start_time = NULL,
+  until_id = NULL,
+  since_id = NULL,
   pagination_token = NULL,
-  token = Sys.getenv("X_BEARER_TOKEN"),
+  exclude = NULL,
+  sleep_time = 0,
+  bearer_token = Sys.getenv("X_BEARER_TOKEN"),
   post_fields = c("created_at", "text", "public_metrics", "geo", "attachments",
     "context_annotations", "entities", "lang", "referenced_tweets", "reply_settings",
     "conversation_id", "in_reply_to_user_id", "author_id", "edit_history_tweet_ids",
@@ -18,6 +24,8 @@ x_get_timeline(
   media_fields = c("duration_ms", "height", "width", "preview_image_url", "type", "url",
     "public_metrics", "variants", "media_key"),
   poll_fields = c("end_datetime", "duration_minutes", "options", "voting_status", "id"),
+  place_fields = c("contained_within", "country", "country_code", "full_name", "geo",
+    "id", "name", "place_type"),
   expansions = c("author_id", "entities.mentions.username",
     "referenced_tweets.id.author_id", "referenced_tweets.id", "in_reply_to_user_id",
     "attachments.media_keys", "attachments.poll_ids")
@@ -29,12 +37,58 @@ x_get_timeline(
 
 \item{max_results}{\code{numeric}; a number between 1 and 100 indicating the
 number of posts returned per API call.}
+
+\item{end_time}{The latest date-time from which you want to get posts.
+Provide the value in ISO 8601 format (i.e., \code{YYYY-MM-DDTHH:mm:ssZ}). The
+\code{iso_8601()} function will convert a string, date, or date-time object to
+the required format (e.g., \code{iso_8601("2024-10-10")}).}
+
+\item{start_time}{The earliest date-time from which you want to get posts.}
+
+\item{until_id}{A post ID to limit the results to posts older than the
+specified ID.}
+
+\item{since_id}{A post ID to limit the results to posts more recent than the
+specified ID.}
+
+\item{pagination_token}{A string used to navigate backward through result
+pages. The X API provides this token when more results are available.
+Typically, you won’t need to set this manually as the function handles it,
+but you can supply a pagination_token from a previous response to continue
+retrieving results beyond the last page, if desired.}
+
+\item{exclude}{A comma-separated list of the types of posts to exclude from
+the response (e.g., "retweets", "replies", or "retweets,replies"). #'
+@param sleep_time A numeric value specifying the number of seconds to wait
+between API calls. This helps avoid hitting rate limits imposed by the X
+API. You can adjust this value based on your tier's rate limits, which are
+detailed on the \href{https://developer.x.com/en/docs/rate-limits}{X API documentation website}.}
+
+\item{bearer_token}{A string containing the bearer token for authenticating
+with the X API. By default, this argument retrieves the token from the
+environment variable \code{X_BEARER_TOKEN} (via \code{Sys.getenv("X_BEARER_TOKEN")}).
+Adding your bearer token to your \code{.Renviron} file ensures it is securely
+stored and accessible without needing to manually input it for each
+session.}
+
+\item{post_fields}{\code{character}, \code{vector}; a list of fields to
+return for each post \code{c("created_at", "text", "public_metrics", "geo",
+  "attachments","context_annotations", "entities", "lang",
+  "referenced_tweets", "reply_settings", "conversation_id",
+  "in_reply_to_user_id", "author_id", "edit_history_tweet_ids", "id")}}
+
+\item{user_fields}{\code{character}, \code{vector}; a list of fields to return
+for each user \code{c("created_at", "description", "protected", "entities",
+"location", "profile_image_url", "public_metrics", "verified",
+"verified_type")}}
 }
 \value{
-\code{list} that contains 4 elements that make up the API response
+A \code{list} containing the four elements that make up the API
+response
 }
 \description{
-Ping the timeline endpoint. Add more details here.
+Ping the timeline endpoint.  The X API only allows fetching up to the most
+recent 3,200 posts.
 }
 \examples{
 \dontrun{

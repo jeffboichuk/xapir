@@ -1,16 +1,36 @@
 #' Get User Timeline
 #'
 #' @description
-#' Ping the timeline endpoint. Add more details here.
+#' Ping the timeline endpoint.  The X API only allows fetching up to the most
+#' recent 3,200 posts.
 #'
 #' @importFrom httr2 request req_auth_bearer_token req_url_path_append req_perform resp_body_json req_url_query
 #' @importFrom purrr pluck
 #' @importFrom stringr str_c
 #' @template username
 #' @template max_results
+#' @param end_time The latest date-time from which you want to get posts.
+#'   Provide the value in ISO 8601 format (i.e., `YYYY-MM-DDTHH:mm:ssZ`). The
+#'   `iso_8601()` function will convert a string, date, or date-time object to
+#'   the required format (e.g., `iso_8601("2024-10-10")`).
+#' @param start_time The earliest date-time from which you want to get posts.
+#' @param until_id A post ID to limit the results to posts older than the
+#'   specified ID.
+#' @param since_id A post ID to limit the results to posts more recent than the
+#'   specified ID.
 #' @template pagination_token
-#' @template pagination_token
-#' @return \code{list} that contains 4 elements that make up the API response
+#' @param exclude A comma-separated list of the types of posts to exclude from
+#'   the response (e.g., "retweets", "replies", or "retweets,replies"). #'
+#'   @param sleep_time A numeric value specifying the number of seconds to wait
+#'   between API calls. This helps avoid hitting rate limits imposed by the X
+#'   API. You can adjust this value based on your tier's rate limits, which are
+#'   detailed on the [X API documentation
+#'   website](https://developer.x.com/en/docs/rate-limits).
+#' @template bearer_token
+#' @template post_fields
+#' @template user_fields
+#' @return A \code{list} containing the four elements that make up the API
+#'   response
 #' @examples
 #' \dontrun{
 #' tl <- x_get_timeline("Tesla")
@@ -23,10 +43,10 @@ x_get_timeline <- function(
     start_time       = NULL,
     until_id         = NULL,
     since_id         = NULL,
-    exclude          = NULL,
     pagination_token = NULL,
+    exclude          = NULL,
     sleep_time       = 0,
-    token            = Sys.getenv("X_BEARER_TOKEN"),
+    bearer_token     = Sys.getenv("X_BEARER_TOKEN"),
     post_fields      =
       c("created_at", "text", "public_metrics", "geo", "attachments",
         "context_annotations", "entities", "lang", "referenced_tweets",
@@ -54,7 +74,7 @@ x_get_timeline <- function(
   # Get the user_id for the specified username
   request(base_url = "https://api.x.com/2") |>
     req_url_path_append(endpoint = paste0("users/by/username/", username)) |>
-    req_auth_bearer_token(token = token) |>
+    req_auth_bearer_token(token = bearer_token) |>
     req_perform() |>
     resp_body_json() |>
     pluck("data", "id") ->
@@ -90,7 +110,7 @@ x_get_timeline <- function(
         place.fields     = place_fields_str,
         expansions       = expansions_str
       ) |>
-      req_auth_bearer_token(token = Sys.getenv("X_BEARER_TOKEN")) |>
+      req_auth_bearer_token(token = bearer_token) |>
       req_perform() |>
       resp_body_json() ->
       this_response
@@ -109,10 +129,6 @@ x_get_timeline <- function(
     Sys.sleep(sleep_time)
 
   }
-
-  # Check if the pagination token is not null
-  # if not null, then capture and bind together.
-  # results2 <- x_get_timeline(pagination_token = XXXXX)
 
   # Return the response
   return(response)
