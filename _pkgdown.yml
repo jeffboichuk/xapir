@@ -36,3 +36,5 @@ reference:
     desc: Functions to query timlines
     contents:
       - '`x_get_timeline`'
+      - '`iso_8601`'
+      - '`x_extract_post`'
