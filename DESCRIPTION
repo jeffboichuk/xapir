@@ -25,7 +25,10 @@ Imports:
     purrr (>= 0.2.5),
     httr2 (>= 1.0.0),
     stringr,
-    lubridate
+    lubridate,
+    dplyr,
+    tidyr,
+    tidyselect
 Suggests:
     knitr,
     rmarkdown,
