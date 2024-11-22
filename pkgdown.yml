@@ -2,7 +2,7 @@ pandoc: 3.1.11
 pkgdown: 2.1.1
 pkgdown_sha: ~
 articles: {}
-last_built: 2024-11-20T03:28Z
+last_built: 2024-11-22T13:15Z
 urls:
   reference: https://Ivey-Business-School.github.io/xapir/reference
   article: https://Ivey-Business-School.github.io/xapir/articles
