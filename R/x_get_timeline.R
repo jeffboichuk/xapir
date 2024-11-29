@@ -72,13 +72,21 @@ x_get_timeline <- function(
   response <- NULL
 
   # Get the user_id for the specified username
-  request(base_url = "https://api.x.com/2") |>
-    req_url_path_append(endpoint = paste0("users/by/username/", username)) |>
-    req_auth_bearer_token(token = bearer_token) |>
-    req_perform() |>
-    resp_body_json() |>
-    pluck("data", "id") ->
-    user_id
+   while (TRUE) {
+    tryCatch({
+      request(base_url = "https://api.x.com/2") |>
+        req_url_path_append(endpoint = paste0("users/by/username/", username)) |>
+        req_auth_bearer_token(token = bearer_token) |>
+        req_perform() |>
+        resp_body_json() |>
+        pluck("data", "id") ->
+        user_id
+      break # Exit the loop if successful
+    }, error = function(e) {
+      message("Error fetching user ID: ", e$message, ". Retrying in 60 seconds.")
+      Sys.sleep(60)
+    })
+  }
 
   # Join the fields with commas as the API expects
   post_fields_str  <- str_c(post_fields, collapse = ",")
@@ -91,29 +99,56 @@ x_get_timeline <- function(
   call_i <- 1
 
   # Make the API request
-  while (call_i == 1 | !is.null(pagination_token)) {
+   while (call_i == 1 | !is.null(pagination_token)) {
 
-    request(base_url = "https://api.x.com/2") |>
-      req_url_path_append(endpoint = paste0("users/", user_id, "/tweets")) |>
-      req_url_query(
-        max_results      = max_results,
-        end_time         = end_time,
-        start_time       = start_time,
-        until_id         = until_id,
-        since_id         = since_id,
-        exclude          = exclude,
-        pagination_token = pagination_token,
-        tweet.fields     = post_fields_str,
-        user.fields      = user_fields_str,
-        media.fields     = media_fields_str,
-        poll.fields      = poll_fields_str,
-        place.fields     = place_fields_str,
-        expansions       = expansions_str
-      ) |>
-      req_auth_bearer_token(token = bearer_token) |>
-      req_perform() |>
-      resp_body_json() ->
-      this_response
+    while (TRUE) {
+      tryCatch({
+        request(base_url = "https://api.x.com/2") |>
+          req_url_path_append(endpoint = paste0("users/", user_id, "/tweets")) |>
+          req_url_query(
+            max_results      = max_results,
+            end_time         = end_time,
+            start_time       = start_time,
+            until_id         = until_id,
+            since_id         = since_id,
+            exclude          = exclude,
+            pagination_token = pagination_token,
+            tweet.fields     = post_fields_str,
+            user.fields      = user_fields_str,
+            media.fields     = media_fields_str,
+            poll.fields      = poll_fields_str,
+            place.fields     = place_fields_str,
+            expansions       = expansions_str
+          ) |>
+          req_auth_bearer_token(token = bearer_token) |>
+          req_perform() |>
+          resp_body_json() ->
+          latest_response
+
+        # Log timeline retrieval process
+        message("Timeline retrieved successfully. Processing data...")
+
+        # Check for multiple pages
+        if (length(latest_response) > 1) {
+          message("Multiple pages detected: ", length(latest_response), " pages.")
+        } else {
+          message("Single-page timeline detected.")
+        }
+
+        # Check for referenced posts
+        if ("includes" %in% names(latest_response) &&
+            "tweets" %in% names(latest_response$includes)) {
+          message("Referenced posts found. Extracting additional data...")
+        } else {
+          message("No referenced posts found.")
+        }
+
+        break # Exit the loop if successful
+      }, error = function(e) {
+        message("Error fetching tweets: ", e$message, ". Retrying in 60 seconds.")
+        Sys.sleep(60)
+      })
+    }
 
     response <- c(response, list(this_response))
 
