@@ -17,17 +17,14 @@
 #' post_media <- x_get_timeline_post_media(timeline)
 #' }
 #' @export
-x_get_timeline_post_media <- function(timeline, include_referenced_posts = TRUE) {
+x_get_timeline_post_media <- function(
+    timeline,
+    include_referenced_posts = TRUE
+  ) {
 
-  # Determine whether the data includes multiple pages and whether the user referenced other posts
+  # Determine whether the data includes multiple pages and whether the user
+  # referenced other posts
   timeline_has_multiple_pages <- length(timeline) > 1
-
-  # Logging to guide the user
-  if (timeline_has_multiple_pages) {
-    message("Processing multi-page timeline...")
-  } else {
-    message("Processing single-page timeline...")
-  }
 
   # Does the timeline reference posts?
   if (timeline_has_multiple_pages) {
@@ -40,13 +37,6 @@ x_get_timeline_post_media <- function(timeline, include_referenced_posts = TRUE)
   } else {
     "includes" %in% names(timeline) && "tweets" %in% names(timeline$includes) ->
       timeline_references_posts
-  }
-
-  # Logging referenced posts
-  if (timeline_references_posts) {
-    message("Referenced posts found. Extracting additional data...")
-  } else {
-    message("No referenced posts found.")
   }
 
   if (timeline_has_multiple_pages) {
@@ -67,7 +57,6 @@ x_get_timeline_post_media <- function(timeline, include_referenced_posts = TRUE)
       map(pluck("data")) |>
       unlist(recursive = FALSE) ->
       post_list
-
     if (timeline_references_posts && include_referenced_posts) {
       timeline |>
         map(pluck("includes")) |>
@@ -77,12 +66,10 @@ x_get_timeline_post_media <- function(timeline, include_referenced_posts = TRUE)
     } else {
       post_list_referenced <- NULL
     }
-
   } else {
     timeline[[1]] |>
       pluck("data") ->
       post_list
-
     if (timeline_references_posts && include_referenced_posts) {
       timeline[[1]] |>
         pluck("includes", "tweets") ->
