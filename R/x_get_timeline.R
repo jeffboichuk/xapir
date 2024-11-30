@@ -69,25 +69,31 @@ x_get_timeline <- function(
         "in_reply_to_user_id", "attachments.media_keys", "attachments.poll_ids")
 ) {
 
-
   response <- NULL
 
   # Get the user_id for the specified username
   while (TRUE) {
-    tryCatch({
-      request(base_url = "https://api.x.com/2") |>
-        req_url_path_append(endpoint = paste0("users/by/username/", username)) |>
-        req_auth_bearer_token(token = bearer_token) |>
-        req_perform() |>
-        resp_body_json() |>
-        pluck("data", "id") ->
-        user_id
-      break # Exit the loop if successful
-    }, error = function(e) {
-      message("Error fetching user ID: ", e$message, ". Retrying in 60 seconds.")
-      Sys.sleep(60)
-    })
+    tryCatch(
+      expr = {
+        request(base_url = "https://api.x.com/2") |>
+          req_url_path_append(
+            endpoint = paste0("users/by/username/", username)
+          ) |>
+          req_auth_bearer_token(token = bearer_token) |>
+          req_perform() |>
+          resp_body_json() |>
+          pluck("data", "id") ->
+          user_id
+        # Exit the loop if successful
+        break
+      },
+      error = function(e) {
+        message(e$message, " Retrying in 60 seconds.")
+        Sys.sleep(60)
+      }
+    )
   }
+
   # Join the fields with commas as the API expects
   post_fields_str  <- str_c(post_fields, collapse = ",")
   user_fields_str  <- str_c(user_fields, collapse = ",")
@@ -102,33 +108,40 @@ x_get_timeline <- function(
   while (call_i == 1 | !is.null(pagination_token)) {
 
     while (TRUE) {
-      tryCatch({
-        request(base_url = "https://api.x.com/2") |>
-          req_url_path_append(endpoint = paste0("users/", user_id, "/tweets")) |>
-          req_url_query(
-            max_results      = max_results,
-            end_time         = end_time,
-            start_time       = start_time,
-            until_id         = until_id,
-            since_id         = since_id,
-            exclude          = exclude,
-            pagination_token = pagination_token,
-            tweet.fields     = post_fields_str,
-            user.fields      = user_fields_str,
-            media.fields     = media_fields_str,
-            poll.fields      = poll_fields_str,
-            place.fields     = place_fields_str,
-            expansions       = expansions_str
-          ) |>
-          req_auth_bearer_token(token = bearer_token) |>
-          req_perform() |>
-          resp_body_json() ->
-          this_response
-        break # Exit the loop if successful
-      }, error = function(e) {
-        message("Error fetching tweets: ", e$message, ". Retrying in 60 seconds.")
-        Sys.sleep(60)
-      })
+      tryCatch(
+        expr = {
+          request(base_url = "https://api.x.com/2") |>
+            req_url_path_append(
+              endpoint = paste0("users/", user_id, "/tweets")
+            ) |>
+            req_url_query(
+              max_results      = max_results,
+              end_time         = end_time,
+              start_time       = start_time,
+              until_id         = until_id,
+              since_id         = since_id,
+              exclude          = exclude,
+              pagination_token = pagination_token,
+              tweet.fields     = post_fields_str,
+              user.fields      = user_fields_str,
+              media.fields     = media_fields_str,
+              poll.fields      = poll_fields_str,
+              place.fields     = place_fields_str,
+              expansions       = expansions_str
+            ) |>
+            req_auth_bearer_token(token = bearer_token) |>
+            req_perform() |>
+            resp_body_json() ->
+            this_response
+
+          # Exit the loop if successful
+          break
+        },
+        error = function(e) {
+          message(e$message, " Retrying in 60 seconds.")
+          Sys.sleep(60)
+        }
+      )
     }
 
     response <- c(response, list(this_response))
