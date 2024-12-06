@@ -21,6 +21,7 @@
 #' @export
 x_get_timeline_post <- function(
     timeline,
+    tz = Sys.timezone(),
     include_referenced_posts = TRUE
 ) {
 
@@ -111,7 +112,7 @@ x_get_timeline_post <- function(
     add_column(
       !!!post_schema[setdiff(names(post_schema), names(post))]
     ) |>
-    mutate(created_at = ymd_hms(created_at)) |>
+    mutate(created_at = ymd_hms(created_at) |> with_tz(tz)) |>
     mutate(
       ref_type = map_chr(referenced_posts, ~ .x$type %||% NA_character_),
       ref_id   = map_chr(referenced_posts, ~ .x$id %||% NA_character_)
@@ -122,9 +123,12 @@ x_get_timeline_post <- function(
     ) |>
     mutate(
       reposted   = ifelse(ref_type == "retweeted", ref_id, NA_character_),
+      reposted   = as.character(reposted),
       quoted     = ifelse(ref_type == "quoted", ref_id, NA_character_),
+      quoted     = as.character(quoted),
       replied_to = ifelse(ref_type == "replied_to", ref_id, NA_character_),
-      .after = reply_settings
+      replied_to = as.character(replied_to),
+      .after     = reply_settings
     ) |>
     select(all_of(post_variable)) ->
     post
