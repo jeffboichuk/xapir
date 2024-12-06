@@ -7,15 +7,14 @@
 #' @param timeline A list containing the timeline data retrieved from the X API.
 #' @param include_referenced_posts Logical. Whether to include referenced posts in the output. Defaults to TRUE.
 #' @return A tibble containing structured post data.
-#' @importFrom purrr map map_dfr map_chr pluck
+#' @importFrom purrr map map_dfr map_chr pluck map_lgl
 #' @importFrom dplyr mutate select any_of arrange distinct
 #' @examples
 #' \dontrun{
 #' timeline <- x_get_timeline(
-#'   username = "Tesla",
+#'   username = "XDevelopers",
 #'   max_results = 100,
-#'   start_time = iso_8601(as_date("2024-10-10") - days(14)),
-#'   end_time = iso_8601(as_date("2024-10-10") + days(14))
+#'   start_time = iso_8601(Sys.Date() - 7)
 #' )
 #' post <- x_get_timeline_post(timeline)
 #' }
@@ -25,54 +24,66 @@ x_get_timeline_post <- function(
     include_referenced_posts = TRUE
 ) {
 
-  # Check if the timeline has multiple pages
-  timeline_has_multiple_pages <- length(timeline) > 1
+  timeline |>
+    map(pluck("data")) |>
+    unlist(recursive = FALSE) ->
+    post_list
 
-  # Determine if referenced posts exist
-  if (timeline_has_multiple_pages) {
-    map_lgl(
-      timeline,
-      ~ "includes" %in% names(.x) && "tweets" %in% names(.x$includes)
-    ) |>
-      any() ->
-      timeline_references_posts
-  } else {
-    "includes" %in% names(timeline) && "tweets" %in% names(timeline$includes) ->
-      timeline_references_posts
-  }
+  map_lgl(
+    timeline,
+    ~ "includes" %in% names(.x) && "tweets" %in% names(.x$includes)
+  ) |>
+    any() ->
+    timeline_has_referenced_posts
 
-  # Process timeline data
-  if (timeline_has_multiple_pages) {
+  if (timeline_has_referenced_posts && include_referenced_posts) {
     timeline |>
-      map(pluck("data")) |>
+      map(pluck("includes")) |>
+      map(pluck("tweets")) |>
       unlist(recursive = FALSE) ->
-      post_list
-
-    if (timeline_references_posts && include_referenced_posts) {
-      timeline |>
-        map(pluck("includes")) |>
-        map(pluck("tweets")) |>
-        unlist(recursive = FALSE) ->
-        post_list_referenced
-    } else {
-      post_list_referenced <- NULL
-    }
+      post_list_referenced
   } else {
-    timeline[[1]] |>
-      pluck("data") ->
-      post_list
-
-    if (timeline_references_posts && include_referenced_posts) {
-      timeline[[1]] |>
-        pluck("includes", "tweets") ->
-        post_list_referenced
-    } else {
-      post_list_referenced <- NULL
-    }
+    post_list_referenced <- NULL
   }
 
   # Combine post data
   post_list_all <- c(post_list, post_list_referenced)
+
+  post_schema <- tibble(
+    created_at          = NA_POSIXct_,
+    text                = NA_character_,
+    impression_count    = NA_integer_,
+    like_count          = NA_integer_,
+    repost_count        = NA_integer_,
+    quote_count         = NA_integer_,
+    reply_count         = NA_integer_,
+    bookmark_count      = NA_integer_,
+    reply_settings      = NA_character_,
+    referenced_posts    = list(NULL),
+    in_reply_to_user_id = NA_character_,
+    user_id             = NA_character_,
+    conversation_id     = NA_character_,
+    post_id             = NA_character_
+  )
+
+  post_variable <- c(
+    "created_at",
+    "text",
+    "impression_count",
+    "like_count",
+    "repost_count",
+    "quote_count",
+    "reply_count",
+    "bookmark_count",
+    "reply_settings",
+    "reposted",
+    "quoted",
+    "replied_to",
+    "in_reply_to_user_id",
+    "user_id",
+    "conversation_id",
+    "post_id"
+  )
 
   # Create the post tibble
   post_list_all |>
@@ -96,44 +107,27 @@ x_get_timeline_post <- function(
     ) ->
     post
 
-  # Finalize the post data
-  post_variable <- c(
-    "created_at",
-    "text",
-    "impression_count",
-    "like_count",
-    "repost_count",
-    "quote_count",
-    "reply_count",
-    "bookmark_count",
-    "reply_settings",
-    "reposted",
-    "quoted",
-    "replied_to",
-    "in_reply_to_user_id",
-    "user_id",
-    "conversation_id",
-    "post_id"
-  )
-
-  if ("referenced_posts" %in% colnames(post)) {
-    post |>
-      mutate(
-        created_at = ymd_hms(created_at),
-        ref_type   = map_chr(referenced_posts, ~ .x$type %||% NA_character_),
-        ref_id     = map_chr(referenced_posts, ~ .x$id %||% NA_character_),
-        reposted   = ifelse(ref_type == "retweeted", ref_id, NA_character_),
-        quoted     = ifelse(ref_type == "quoted", ref_id, NA_character_),
-        replied_to = ifelse(ref_type == "replied_to", ref_id, NA_character_)
-      ) |>
-      select(any_of(post_variable)) ->
-      post
-  } else {
-    post |>
-      mutate(created_at = ymd_hms(created_at)) |>
-      select(any_of(post_variable)) ->
-      post
-  }
+  post |>
+    add_column(
+      !!!post_schema[setdiff(names(post_schema), names(post))]
+    ) |>
+    mutate(created_at = ymd_hms(created_at)) |>
+    mutate(
+      ref_type = map_chr(referenced_posts, ~ .x$type %||% NA_character_),
+      ref_id   = map_chr(referenced_posts, ~ .x$id %||% NA_character_)
+    ) |>
+    mutate(
+      reposted   = ifelse(ref_type == "retweeted", ref_id, NA_character_),
+      .after = reply_settings
+    ) |>
+    mutate(
+      reposted   = ifelse(ref_type == "retweeted", ref_id, NA_character_),
+      quoted     = ifelse(ref_type == "quoted", ref_id, NA_character_),
+      replied_to = ifelse(ref_type == "replied_to", ref_id, NA_character_),
+      .after = reply_settings
+    ) |>
+    select(all_of(post_variable)) ->
+    post
 
   return(post)
 }
