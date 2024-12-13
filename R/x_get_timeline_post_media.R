@@ -8,7 +8,7 @@
 #' @param include_referenced_posts Logical. Whether to include referenced posts in the output. Defaults to TRUE.
 #' @return A tibble with post and media details, including post IDs, media type,
 #'   view count, dimensions, and URLs for images and videos.
-#' @importFrom purrr map map_dfr map_lgl pluck
+#' @importFrom purrr map map_dfr pluck
 #' @importFrom dplyr left_join mutate select rename distinct arrange relocate
 #' @importFrom tidyr unnest_wider unnest
 #' @examples
@@ -20,67 +20,43 @@
 x_get_timeline_post_media <- function(
     timeline,
     include_referenced_posts = TRUE
-  ) {
+) {
 
-  # Determine whether the data includes multiple pages and whether the user
-  # referenced other posts
-  timeline_has_multiple_pages <- length(timeline) > 1
+  # Check if the timeline references posts
+  map_lgl(
+    timeline,
+    ~ "includes" %in% names(.x) && "tweets" %in% names(.x$includes)
+  ) |>
+    any() ->
+    timeline_references_posts
 
-  # Does the timeline reference posts?
-  if (timeline_has_multiple_pages) {
-    map_lgl(
-      timeline,
-      ~ "includes" %in% names(.x) && "tweets" %in% names(.x$includes)
-    ) |>
-      any() ->
-      timeline_references_posts
-  } else {
-    "includes" %in% names(timeline) && "tweets" %in% names(timeline$includes) ->
-      timeline_references_posts
-  }
+  # Extract media data
+  timeline |>
+    map(pluck("includes")) |>
+    map(pluck("media")) |>
+    unlist(recursive = FALSE) ->
+    post_media_list
 
-  if (timeline_has_multiple_pages) {
+  # Extract post data
+  timeline |>
+    map(pluck("data")) |>
+    unlist(recursive = FALSE) ->
+    post_list
+
+  if (timeline_references_posts && include_referenced_posts) {
     timeline |>
       map(pluck("includes")) |>
-      map(pluck("media")) |>
+      map(pluck("tweets")) |>
       unlist(recursive = FALSE) ->
-      post_media_list
+      post_list_referenced
   } else {
-    timeline[[1]] |>
-      pluck("includes") |>
-      pluck("media") ->
-      post_media_list
+    post_list_referenced <- NULL
   }
 
-  if (timeline_has_multiple_pages) {
-    timeline |>
-      map(pluck("data")) |>
-      unlist(recursive = FALSE) ->
-      post_list
-    if (timeline_references_posts && include_referenced_posts) {
-      timeline |>
-        map(pluck("includes")) |>
-        map(pluck("tweets")) |>
-        unlist(recursive = FALSE) ->
-        post_list_referenced
-    } else {
-      post_list_referenced <- NULL
-    }
-  } else {
-    timeline[[1]] |>
-      pluck("data") ->
-      post_list
-    if (timeline_references_posts && include_referenced_posts) {
-      timeline[[1]] |>
-        pluck("includes", "tweets") ->
-        post_list_referenced
-    } else {
-      post_list_referenced <- NULL
-    }
-  }
+  # Combine post data
+  post_list_all <- c(post_list, post_list_referenced)
 
-  post_list_all <- (c(post_list, post_list_referenced))
-
+  # Create post-attachment crosswalk
   post_list_all |>
     map_dfr(
       ~ tibble(
@@ -93,6 +69,7 @@ x_get_timeline_post_media <- function(
     distinct(post_id, attachment_id) ->
     post_attachment_crosswalk
 
+  # Create media tibble
   post_media_list |>
     map_dfr(
       ~ tibble(
@@ -128,6 +105,7 @@ x_get_timeline_post_media <- function(
     ) ->
     media
 
+  # Join media with post-attachment crosswalk
   media |>
     left_join(
       post_attachment_crosswalk,
